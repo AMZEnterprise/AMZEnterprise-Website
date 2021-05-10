@@ -41,11 +41,13 @@ namespace AMZEnterpriseWebsite.Data.Migrations
                     LockoutEnd = table.Column<DateTimeOffset>(nullable: true),
                     LockoutEnabled = table.Column<bool>(nullable: false),
                     AccessFailedCount = table.Column<int>(nullable: false),
-                    FirstName = table.Column<string>(maxLength: 100, nullable: true),
-                    LastName = table.Column<string>(maxLength: 100, nullable: true),
-                    DateTime = table.Column<DateTime>(nullable: false),
-                    Description = table.Column<string>(maxLength: 1000, nullable: true),
-                    ProfileImagePath = table.Column<string>(nullable: true)
+                    FirstName = table.Column<string>(maxLength: 256, nullable: false),
+                    LastName = table.Column<string>(maxLength: 256, nullable: false),
+                    Biography = table.Column<string>(maxLength: 1000, nullable: true),
+                    IsActive = table.Column<bool>(nullable: false),
+                    FilesPathGuid = table.Column<Guid>(nullable: false),
+                    CreateDate = table.Column<DateTime>(nullable: false),
+                    LastEditDate = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
@@ -53,92 +55,69 @@ namespace AMZEnterpriseWebsite.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Categories",
+                name: "Certificates",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    ParentId = table.Column<int>(nullable: true),
-                    Name = table.Column<string>(maxLength: 100, nullable: false),
-                    UrlName = table.Column<string>(maxLength: 100, nullable: false),
-                    DateTime = table.Column<DateTime>(nullable: false)
+                    Title = table.Column<string>(maxLength: 256, nullable: false),
+                    Url = table.Column<string>(maxLength: 1000, nullable: true),
+                    FilesPathGuid = table.Column<Guid>(nullable: false),
+                    CreateDate = table.Column<DateTime>(nullable: false),
+                    LastEditDate = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Categories", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Categories_Categories_ParentId",
-                        column: x => x.ParentId,
-                        principalTable: "Categories",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Restrict);
+                    table.PrimaryKey("PK_Certificates", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "Medias",
+                name: "Contacts",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Name = table.Column<string>(maxLength: 100, nullable: false),
-                    MediaFileType = table.Column<int>(nullable: false),
-                    Size = table.Column<double>(nullable: false),
-                    DateTime = table.Column<DateTime>(nullable: false)
+                    UserFullName = table.Column<string>(maxLength: 256, nullable: false),
+                    EmailOrPhoneNumber = table.Column<string>(maxLength: 256, nullable: false),
+                    Subject = table.Column<string>(maxLength: 256, nullable: false),
+                    Body = table.Column<string>(maxLength: 1000, nullable: false),
+                    Ip = table.Column<string>(maxLength: 256, nullable: false),
+                    CreateDate = table.Column<DateTime>(nullable: false),
+                    LastEditDate = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Medias", x => x.Id);
+                    table.PrimaryKey("PK_Contacts", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "MyProgresses",
+                name: "PostCategories",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Topic = table.Column<string>(maxLength: 100, nullable: false),
-                    ProgressValuePercentage = table.Column<int>(nullable: false)
+                    Title = table.Column<string>(maxLength: 256, nullable: false),
+                    CreateDate = table.Column<DateTime>(nullable: false),
+                    LastEditDate = table.Column<DateTime>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_MyProgresses", x => x.Id);
+                    table.PrimaryKey("PK_PostCategories", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProjectRegisters",
+                name: "ProgressBar",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Title = table.Column<string>(maxLength: 100, nullable: false),
-                    FullName = table.Column<string>(maxLength: 100, nullable: false),
-                    ProjectType = table.Column<int>(nullable: false),
-                    Phone = table.Column<string>(maxLength: 11, nullable: false),
-                    SocialMediaAccount = table.Column<string>(maxLength: 100, nullable: false),
-                    Description = table.Column<string>(maxLength: 2000, nullable: false),
-                    DateTime = table.Column<DateTime>(nullable: false),
-                    DoneDate = table.Column<DateTime>(nullable: true),
-                    Status = table.Column<int>(nullable: false)
+                    Topic = table.Column<string>(nullable: true),
+                    Percentage = table.Column<int>(nullable: false),
+                    SortIndex = table.Column<int>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_ProjectRegisters", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Projects",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Name = table.Column<string>(maxLength: 100, nullable: false),
-                    Description = table.Column<string>(nullable: false),
-                    ProjectType = table.Column<int>(nullable: false),
-                    DateTime = table.Column<DateTime>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Projects", x => x.Id);
+                    table.PrimaryKey("PK_ProgressBar", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -147,64 +126,42 @@ namespace AMZEnterpriseWebsite.Data.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    SiteName = table.Column<string>(maxLength: 100, nullable: false),
-                    SiteLogo = table.Column<string>(nullable: true),
-                    SocialMedia1 = table.Column<string>(nullable: true),
-                    SocialMedia2 = table.Column<string>(nullable: true),
-                    SocialMedia3 = table.Column<string>(nullable: true),
-                    SocialMedia4 = table.Column<string>(nullable: true),
-                    SocialMedia5 = table.Column<string>(nullable: true),
-                    SocialMedia6 = table.Column<string>(nullable: true),
-                    SocialMedia7 = table.Column<string>(nullable: true),
-                    SocialMedia8 = table.Column<string>(nullable: true),
-                    Phone1 = table.Column<string>(nullable: true),
-                    Phone2 = table.Column<string>(nullable: true),
-                    Phone3 = table.Column<string>(nullable: true),
-                    Email1 = table.Column<string>(nullable: true),
-                    Email2 = table.Column<string>(nullable: true),
-                    HomeMetaTitle = table.Column<string>(nullable: true),
-                    HomeMetaKeywords = table.Column<string>(nullable: true),
-                    HomeMetaDescription = table.Column<string>(nullable: true),
-                    BankId = table.Column<string>(nullable: true),
-                    BitcoinWalletKey = table.Column<string>(nullable: true)
+                    Phone1 = table.Column<string>(maxLength: 20, nullable: true),
+                    Phone2 = table.Column<string>(maxLength: 20, nullable: true),
+                    Email1 = table.Column<string>(maxLength: 256, nullable: true),
+                    Email2 = table.Column<string>(maxLength: 256, nullable: true),
+                    Instagram = table.Column<string>(maxLength: 256, nullable: true),
+                    Telegram = table.Column<string>(maxLength: 256, nullable: true),
+                    GooglePlus = table.Column<string>(maxLength: 256, nullable: true),
+                    FaceBook = table.Column<string>(maxLength: 256, nullable: true),
+                    LinkedIn = table.Column<string>(maxLength: 256, nullable: true),
+                    Youtube = table.Column<string>(maxLength: 256, nullable: true),
+                    Aparat = table.Column<string>(maxLength: 256, nullable: true),
+                    GitHub = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletName1 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress1 = table.Column<string>(maxLength: 1000, nullable: true),
+                    WalletName2 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress2 = table.Column<string>(maxLength: 1000, nullable: true),
+                    WalletName3 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress3 = table.Column<string>(maxLength: 1000, nullable: true),
+                    WalletName4 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress4 = table.Column<string>(maxLength: 1000, nullable: true),
+                    WalletName5 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress5 = table.Column<string>(maxLength: 1000, nullable: true),
+                    WalletName6 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress6 = table.Column<string>(maxLength: 1000, nullable: true),
+                    WalletName7 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress7 = table.Column<string>(maxLength: 1000, nullable: true),
+                    WalletName8 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress8 = table.Column<string>(maxLength: 1000, nullable: true),
+                    WalletName9 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress9 = table.Column<string>(maxLength: 1000, nullable: true),
+                    WalletName10 = table.Column<string>(maxLength: 256, nullable: true),
+                    WalletAddress10 = table.Column<string>(maxLength: 1000, nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Settings", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "SurveyComments",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Username = table.Column<string>(maxLength: 100, nullable: false),
-                    Email = table.Column<string>(nullable: false),
-                    Body = table.Column<string>(maxLength: 1000, nullable: false),
-                    Status = table.Column<int>(nullable: false),
-                    Ip = table.Column<string>(nullable: true),
-                    DateTime = table.Column<DateTime>(nullable: false),
-                    IsEdited = table.Column<bool>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_SurveyComments", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Tags",
-                columns: table => new
-                {
-                    Id = table.Column<int>(nullable: false)
-                        .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Name = table.Column<string>(maxLength: 100, nullable: false),
-                    UrlName = table.Column<string>(maxLength: 100, nullable: false),
-                    DateTime = table.Column<DateTime>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Tags", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -319,31 +276,25 @@ namespace AMZEnterpriseWebsite.Data.Migrations
                 {
                     Id = table.Column<int>(nullable: false)
                         .Annotation("SqlServer:ValueGenerationStrategy", SqlServerValueGenerationStrategy.IdentityColumn),
-                    Title = table.Column<string>(maxLength: 100, nullable: false),
-                    Body = table.Column<string>(nullable: false),
-                    Status = table.Column<int>(nullable: false),
-                    DateTime = table.Column<DateTime>(nullable: false),
+                    Title = table.Column<string>(maxLength: 256, nullable: false),
+                    Body = table.Column<string>(maxLength: 10000, nullable: false),
+                    CreateDate = table.Column<DateTime>(nullable: false),
                     LastEditDate = table.Column<DateTime>(nullable: false),
-                    CategoryId = table.Column<int>(nullable: false),
+                    Tags = table.Column<string>(maxLength: 1000, nullable: true),
+                    PostCategoryId = table.Column<int>(nullable: true),
                     UserId = table.Column<string>(nullable: true),
-                    MediaId = table.Column<int>(nullable: false),
-                    IsCommentsOn = table.Column<bool>(nullable: false)
+                    IsCommentsOn = table.Column<bool>(nullable: false),
+                    FilesPathGuid = table.Column<Guid>(nullable: false)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Posts", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Posts_Categories_CategoryId",
-                        column: x => x.CategoryId,
-                        principalTable: "Categories",
+                        name: "FK_Posts_PostCategories_PostCategoryId",
+                        column: x => x.PostCategoryId,
+                        principalTable: "PostCategories",
                         principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_Posts_Medias_MediaId",
-                        column: x => x.MediaId,
-                        principalTable: "Medias",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
+                        onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Posts_AspNetUsers_UserId",
                         column: x => x.UserId,
@@ -353,31 +304,7 @@ namespace AMZEnterpriseWebsite.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "ProjectAndMedias",
-                columns: table => new
-                {
-                    MediaId = table.Column<int>(nullable: false),
-                    ProjectId = table.Column<int>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_ProjectAndMedias", x => new { x.ProjectId, x.MediaId });
-                    table.ForeignKey(
-                        name: "FK_ProjectAndMedias_Medias_MediaId",
-                        column: x => x.MediaId,
-                        principalTable: "Medias",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_ProjectAndMedias_Projects_ProjectId",
-                        column: x => x.ProjectId,
-                        principalTable: "Projects",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "Comments",
+                name: "PostComments",
                 columns: table => new
                 {
                     Id = table.Column<int>(nullable: false)
@@ -385,59 +312,36 @@ namespace AMZEnterpriseWebsite.Data.Migrations
                     ParentId = table.Column<int>(nullable: true),
                     UserId = table.Column<string>(nullable: true),
                     PostId = table.Column<int>(nullable: false),
-                    Username = table.Column<string>(nullable: true),
-                    Email = table.Column<string>(nullable: true),
+                    UserFullName = table.Column<string>(maxLength: 256, nullable: true),
+                    Email = table.Column<string>(maxLength: 256, nullable: true),
                     Body = table.Column<string>(maxLength: 1000, nullable: false),
-                    Status = table.Column<int>(nullable: false),
-                    Ip = table.Column<string>(nullable: true),
-                    DateTime = table.Column<DateTime>(nullable: false),
+                    Ip = table.Column<string>(maxLength: 256, nullable: false),
+                    PostCommentStatus = table.Column<int>(nullable: false),
+                    CreateDate = table.Column<DateTime>(nullable: false),
+                    LastEditDate = table.Column<DateTime>(nullable: false),
                     IsEdited = table.Column<bool>(nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Comments", x => x.Id);
+                    table.PrimaryKey("PK_PostComments", x => x.Id);
                     table.ForeignKey(
-                        name: "FK_Comments_Comments_ParentId",
+                        name: "FK_PostComments_PostComments_ParentId",
                         column: x => x.ParentId,
-                        principalTable: "Comments",
+                        principalTable: "PostComments",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
-                        name: "FK_Comments_Posts_PostId",
+                        name: "FK_PostComments_Posts_PostId",
                         column: x => x.PostId,
                         principalTable: "Posts",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
-                        name: "FK_Comments_AspNetUsers_UserId",
+                        name: "FK_PostComments_AspNetUsers_UserId",
                         column: x => x.UserId,
                         principalTable: "AspNetUsers",
                         principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "PostAndTags",
-                columns: table => new
-                {
-                    TagId = table.Column<int>(nullable: false),
-                    PostId = table.Column<int>(nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_PostAndTags", x => new { x.PostId, x.TagId });
-                    table.ForeignKey(
-                        name: "FK_PostAndTags_Posts_PostId",
-                        column: x => x.PostId,
-                        principalTable: "Posts",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                    table.ForeignKey(
-                        name: "FK_PostAndTags_Tags_TagId",
-                        column: x => x.TagId,
-                        principalTable: "Tags",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateIndex(
@@ -480,49 +384,29 @@ namespace AMZEnterpriseWebsite.Data.Migrations
                 filter: "[NormalizedUserName] IS NOT NULL");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Categories_ParentId",
-                table: "Categories",
+                name: "IX_PostComments_ParentId",
+                table: "PostComments",
                 column: "ParentId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comments_ParentId",
-                table: "Comments",
-                column: "ParentId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Comments_PostId",
-                table: "Comments",
+                name: "IX_PostComments_PostId",
+                table: "PostComments",
                 column: "PostId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_Comments_UserId",
-                table: "Comments",
+                name: "IX_PostComments_UserId",
+                table: "PostComments",
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
-                name: "IX_PostAndTags_TagId",
-                table: "PostAndTags",
-                column: "TagId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Posts_CategoryId",
+                name: "IX_Posts_PostCategoryId",
                 table: "Posts",
-                column: "CategoryId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_Posts_MediaId",
-                table: "Posts",
-                column: "MediaId");
+                column: "PostCategoryId");
 
             migrationBuilder.CreateIndex(
                 name: "IX_Posts_UserId",
                 table: "Posts",
                 column: "UserId");
-
-            migrationBuilder.CreateIndex(
-                name: "IX_ProjectAndMedias_MediaId",
-                table: "ProjectAndMedias",
-                column: "MediaId");
         }
 
         protected override void Down(MigrationBuilder migrationBuilder)
@@ -543,25 +427,19 @@ namespace AMZEnterpriseWebsite.Data.Migrations
                 name: "AspNetUserTokens");
 
             migrationBuilder.DropTable(
-                name: "Comments");
+                name: "Certificates");
 
             migrationBuilder.DropTable(
-                name: "MyProgresses");
+                name: "Contacts");
 
             migrationBuilder.DropTable(
-                name: "PostAndTags");
+                name: "PostComments");
 
             migrationBuilder.DropTable(
-                name: "ProjectAndMedias");
-
-            migrationBuilder.DropTable(
-                name: "ProjectRegisters");
+                name: "ProgressBar");
 
             migrationBuilder.DropTable(
                 name: "Settings");
-
-            migrationBuilder.DropTable(
-                name: "SurveyComments");
 
             migrationBuilder.DropTable(
                 name: "AspNetRoles");
@@ -570,16 +448,7 @@ namespace AMZEnterpriseWebsite.Data.Migrations
                 name: "Posts");
 
             migrationBuilder.DropTable(
-                name: "Tags");
-
-            migrationBuilder.DropTable(
-                name: "Projects");
-
-            migrationBuilder.DropTable(
-                name: "Categories");
-
-            migrationBuilder.DropTable(
-                name: "Medias");
+                name: "PostCategories");
 
             migrationBuilder.DropTable(
                 name: "AspNetUsers");

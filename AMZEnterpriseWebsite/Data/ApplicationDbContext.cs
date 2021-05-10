@@ -1,107 +1,270 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using Microsoft.EntityFrameworkCore;
-using AMZEnterpriseWebsite.Models;
-using AMZEnterpriseWebsite.Utility;
-using Bogus.Extensions;
-using Microsoft.AspNetCore.Identity;
+﻿using AMZEnterpriseWebsite.Core.Domain;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.DependencyInjection;
+using Microsoft.EntityFrameworkCore;
 
 namespace AMZEnterpriseWebsite.Data
 {
-    public class ApplicationDbContext : IdentityDbContext<ApplicationUser>
+    public class ApplicationDbContext : IdentityDbContext<User>, IApplicationDbContext
     {
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
         {
-        
+
         }
 
-        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        protected override void OnModelCreating(ModelBuilder builder)
         {
-            base.OnModelCreating(modelBuilder);
+            #region Certificate
 
-            //Post & Tag => n to n relation
-            modelBuilder.Entity<PostAndTag>()
-                .HasKey(e => new { e.PostId, e.TagId });
+            builder.Entity<Certificate>()
+                .Property(x => x.Title)
+                .HasMaxLength(256)
+                .IsRequired();
 
-            modelBuilder.Entity<PostAndTag>()
-                .HasOne(e => e.Post)
-                .WithMany(e => e.PostAndTags)
-                .HasForeignKey(e => e.PostId);
+            builder.Entity<Certificate>()
+                .Property(x => x.Url)
+                .HasMaxLength(1000);
 
-            modelBuilder.Entity<PostAndTag>()
-                .HasOne(e => e.Tag)
-                .WithMany(e => e.PostAndTags)
-                .HasForeignKey(e => e.TagId);
+            #endregion
+
+            #region Contact
+
+            builder.Entity<Contact>()
+                .Property(x => x.UserFullName)
+                .HasMaxLength(256)
+                .IsRequired();
+
+            builder.Entity<Contact>()
+                .Property(x => x.EmailOrPhoneNumber)
+                .HasMaxLength(256)
+                .IsRequired();
+
+            builder.Entity<Contact>()
+                .Property(x => x.Subject)
+                .HasMaxLength(256)
+                .IsRequired();
+
+            builder.Entity<Contact>()
+                .Property(x => x.Body)
+                .HasMaxLength(1000)
+                .IsRequired();
+
+            builder.Entity<Contact>()
+                .Property(x => x.Ip)
+                .HasMaxLength(256)
+                .IsRequired();
+
+            #endregion
+
+            #region Post
+
+            builder.Entity<Post>()
+                .Property(x => x.Title)
+                .HasMaxLength(256)
+                .IsRequired();
+
+            builder.Entity<Post>()
+                .Property(x => x.Body)
+                .HasMaxLength(10000)
+                .IsRequired();
+
+            builder.Entity<Post>()
+                .Property(x => x.Tags)
+                .HasMaxLength(1000);
+
+            #endregion
+
+            #region PostCategory
+
+            builder.Entity<PostCategory>()
+                .Property(x => x.Title)
+                .HasMaxLength(256)
+                .IsRequired();
+
+            #endregion
+
+            #region PostComment
+
+            builder.Entity<PostComment>()
+                .Property(x => x.UserFullName)
+                .HasMaxLength(256);
+
+            builder.Entity<PostComment>()
+                .Property(x => x.Email)
+                .HasMaxLength(256);
+
+            builder.Entity<PostComment>()
+                .Property(x => x.Body)
+                .HasMaxLength(1000)
+                .IsRequired();
+
+            builder.Entity<PostComment>()
+                .Property(x => x.Ip)
+                .HasMaxLength(256)
+                .IsRequired();
+
+            #endregion
+
+            #region Setting
+
+            builder.Entity<Setting>()
+                .Property(x => x.Phone1)
+                .HasMaxLength(20);
+
+            builder.Entity<Setting>()
+                .Property(x => x.Phone2)
+                .HasMaxLength(20);
+
+            builder.Entity<Setting>()
+                .Property(x => x.Email1)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.Email2)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.Instagram)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.Telegram)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.GooglePlus)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.FaceBook)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.LinkedIn)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.Youtube)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.Aparat)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.GitHub)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName1)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress1)
+                .HasMaxLength(1000);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName2)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress2)
+                .HasMaxLength(1000);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName3)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress3)
+                .HasMaxLength(1000);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName4)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress4)
+                .HasMaxLength(1000);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName5)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress5)
+                .HasMaxLength(1000);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName6)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress6)
+                .HasMaxLength(1000);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName7)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress7)
+                .HasMaxLength(1000);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName8)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress8)
+                .HasMaxLength(1000);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName9)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress9)
+                .HasMaxLength(1000);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletName10)
+                .HasMaxLength(256);
+
+            builder.Entity<Setting>()
+                .Property(x => x.WalletAddress10)
+                .HasMaxLength(1000);
+            #endregion
+
+            #region User
+
+            builder.Entity<User>()
+                .Property(x => x.FirstName)
+                .HasMaxLength(256)
+                .IsRequired();
+
+            builder.Entity<User>()
+                .Property(x => x.LastName)
+                .HasMaxLength(256)
+                .IsRequired();
+
+            builder.Entity<User>()
+                .Property(x => x.Biography)
+                .HasMaxLength(1000);
+
+            #endregion
 
 
-
-
-
-            modelBuilder.Entity<ProjectAndMedia>()
-                .HasKey(e => new { e.ProjectId, e.MediaId });
-
-            modelBuilder.Entity<ProjectAndMedia>()
-                .HasOne(e => e.Project)
-                .WithMany(e => e.ProjectAndMedias)
-                .HasForeignKey(e => e.ProjectId);
-
-            modelBuilder.Entity<ProjectAndMedia>()
-                .HasOne(e => e.Media)
-                .WithMany(e => e.ProjectAndMedias)
-                .HasForeignKey(e => e.MediaId);
-
-
-            //Comments Self Referencing
-            modelBuilder.Entity<Comment>()
-                .HasOne(e => e.Parent)
-                .WithMany(e => e.Children)
-                .HasForeignKey(e => e.ParentId);
-
-
-            //Categories Self Referencing
-            modelBuilder.Entity<Category>()
-                .HasOne(e => e.Parent)
-                .WithMany(e => e.Children)
-                .HasForeignKey(e => e.ParentId);
+            base.OnModelCreating(builder);
         }
 
-
-
-        //Panel Users
-        public DbSet<ApplicationUser> ApplicationUser { get; set; }
-
-
-        // Blog Tables
+        public DbSet<User> ApplicationUser { get; set; }
         public DbSet<Post> Posts { get; set; }
-        public DbSet<Category> Categories { get; set; }
-        public DbSet<Tag> Tags { get; set; }
-        public DbSet<PostAndTag> PostAndTags { get; set; }
-        public DbSet<Comment> Comments { get; set; }
-
-        //Blog And Project Medias Table
-        public DbSet<Media> Medias { get; set; }
-        //public DbSet<PostAndMedia> PostAndMedias { get; set; }
-        public DbSet<ProjectAndMedia> ProjectAndMedias { get; set; }
-
-        //Projects Info Table
-        public DbSet<Project> Projects { get; set; }
-
-        //Project Registers Table
-        public DbSet<ProjectRegister> ProjectRegisters { get; set; }
-
-
-        //Settings
+        public DbSet<PostCategory> PostCategories { get; set; }
+        public DbSet<PostComment> PostComments { get; set; }
+        public DbSet<ProgressBar> ProgressBars { get; set; }
         public DbSet<Setting> Settings { get; set; }
-
-        //My Progress
-        public DbSet<MyProgress> MyProgresses { get; set; }
-
-        //Survey Comments
-        public DbSet<SurveyComment> SurveyComments { get; set; }
-
+        public DbSet<ProgressBar> MyProgresses { get; set; }
+        public DbSet<Certificate> Certificates { get; set; }
+        public DbSet<Contact> Contacts { get; set; }
     }
 }

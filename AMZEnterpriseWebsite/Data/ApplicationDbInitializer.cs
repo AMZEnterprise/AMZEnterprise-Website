@@ -1,81 +1,81 @@
-﻿using System;
+﻿using AMZEnterpriseWebsite.Models;
+using Microsoft.AspNetCore.Identity;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
-using AMZEnterpriseWebsite.Models;
-using AMZEnterpriseWebsite.Utility;
-using Microsoft.AspNetCore.Identity;
+using AMZEnterpriseWebsite.Core.Domain;
 
 namespace AMZEnterpriseWebsite.Data
 {
     public static class ApplicationDbInitializer
     {
+        private static ApplicationDbContext _context;
+        private static List<string> _roleNames = new List<string>();
+        private static string _superUserRole = string.Empty;
+        private static User _user = new User();
+        private static string _userPassword = string.Empty;
+
         public static void SeedData(
-            UserManager<ApplicationUser> userManager,
+            ApplicationDbContext context,
+            UserManager<User> userManager,
             RoleManager<IdentityRole> roleManager,
-            ApplicationDbContext context)
+            List<string> roleNames,
+            string superUserRole,
+            User user,
+            string userPassword
+            )
         {
+            _context = context;
+            _roleNames = roleNames;
+            _superUserRole = superUserRole;
+            _user = user;
+            _userPassword = userPassword;
             SeedRoles(roleManager);
             SeedUsers(userManager);
-            SeedSettings(context);
+            SeedDatabase();
         }
 
-        public static void SeedUsers(UserManager<ApplicationUser> userManager)
+        public static void SeedRoles(RoleManager<IdentityRole> roleManager)
         {
-            var adminCount = userManager.GetUsersInRoleAsync(SD.AdminEndUser).Result.Count;
+            foreach (var roleName in _roleNames)
+            {
+                if (!roleManager.RoleExistsAsync(roleName).Result)
+                {
+                    IdentityRole role = new IdentityRole();
+                    role.Name = roleName;
+                    IdentityResult roleResult = roleManager.
+                        CreateAsync(role).Result;
+                }
+            }
+
+        }
+
+        public static void SeedUsers(UserManager<User> userManager)
+        {
+            var adminCount = userManager.GetUsersInRoleAsync(_superUserRole).Result.Count;
 
             if (adminCount <= 0)
             {
                 if (userManager.FindByNameAsync
-                        ("admin123").Result == null)
+                    (_user.UserName).Result == null)
                 {
-                    ApplicationUser user = new ApplicationUser();
-                    user.UserName = "admin123";
-                    user.Email = "example@gmail.com";
-                    user.FirstName = "FristName";
-                    user.LastName = "LastName";
-                    user.DateTime = DateTime.Now;
-                    user.EmailConfirmed = true;
-                    IdentityResult result = userManager.CreateAsync
-                        (user, "p@Ss123").Result;
+                    var result = userManager.CreateAsync
+                        (_user, _userPassword).Result;
 
                     if (result.Succeeded)
                     {
-                        userManager.AddToRoleAsync(user, SD.AdminEndUser).Wait();
+                        userManager.AddToRoleAsync(_user, _superUserRole).Wait();
                     }
                 }
             }
 
         }
 
-        public static void SeedRoles(RoleManager<IdentityRole> roleManager)
+        private static void SeedDatabase()
         {
-            if (!roleManager.RoleExistsAsync(SD.AdminEndUser).Result)
+            if (!_context.Settings.Any())
             {
-                IdentityRole role = new IdentityRole();
-                role.Name = SD.AdminEndUser;
-                IdentityResult roleResult = roleManager.
-                    CreateAsync(role).Result;
-            }
-
-            if (!roleManager.RoleExistsAsync(SD.WriterEndUser).Result)
-            {
-                IdentityRole role = new IdentityRole();
-                role.Name = SD.WriterEndUser;
-                IdentityResult roleResult = roleManager.
-                    CreateAsync(role).Result;
-            }
-        }
-
-        public static void SeedSettings(ApplicationDbContext context)
-        {
-            if (!context.Settings.Any())
-            {
-                context.Settings.Add(new Setting()
-                {
-                    SiteName = "SiteName"
-                });
-                context.SaveChanges();
+                _context.Settings.Add(new Setting());
+                _context.SaveChanges();
             }
         }
     }
