@@ -1,0 +1,14 @@
+﻿using AMZEnterpriseWebsite.Models.Constants;
+using System.ComponentModel.DataAnnotations;
+
+namespace AMZEnterpriseWebsite.Areas.Panel.Models.ViewModels
+{
+    public class UserForgotPasswordFormViewModel
+    {
+        [Display(Name = "ایمیل")]
+        [Required(ErrorMessage = ConstantValidationErrorMessages.RequiredMsg)]
+        [MaxLength(256, ErrorMessage = ConstantValidationErrorMessages.MaxLengthMsg)]
+        [EmailAddress(ErrorMessage = ConstantValidationErrorMessages.RegexMsg)]
+        public string Email { get; set; }
+    }
+}
