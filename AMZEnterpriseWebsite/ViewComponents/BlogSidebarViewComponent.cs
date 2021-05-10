@@ -1,65 +1,59 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using AMZEnterpriseWebsite.Data;
-using AMZEnterpriseWebsite.Models;
+﻿using AMZEnterpriseWebsite.Core.Domain;
 using AMZEnterpriseWebsite.Models.ViewModels;
+using AMZEnterpriseWebsite.Persistence;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AMZEnterpriseWebsite.ViewComponents
 {
     public class BlogSidebarViewComponent : ViewComponent
     {
-        private readonly ApplicationDbContext _context;
-        private BlogVM _blogVm;
-        public BlogSidebarViewComponent(ApplicationDbContext context)
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+
+        public BlogSidebarViewComponent(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _context = context;
-            _blogVm = new BlogVM()
-            {
-                //Select categories which used in posts
-                Categories = _context.Posts
-                    .Include(p => p.Category)
-                    .Where(p=>p.Status == PostStatus.Sent)
-                    .Select
-                        (
-                            p => p.Category
-                        )
-                    .Distinct(),
-
-                //Select latest tags which used in posts
-                Tags = _context.PostAndTags
-                    .Include(pt => pt.Post)
-                    .Include(pt => pt.Tag)
-                    .Where(p => p.Post.Status == PostStatus.Sent)
-                    .OrderByDescending(pt => pt.Tag.DateTime)
-                    .Select
-                        (
-                            pt => pt.Tag
-                        )
-                    .Take(20)
-                    .Distinct(),
-
-                Posts = _context.Posts
-                    .Include(p=>p.Media)
-                    .OrderByDescending(p => p.DateTime)
-                    .Take(4),
-
-
-                ArchivesDate = _context.Posts.Select(p => new BlogVMArchiveDate()
-                {
-                    Year = p.DateTime.Year,
-                    Month = p.DateTime.Month
-                })
-                    .OrderByDescending(p => p.Year)
-                    .ThenByDescending(p => p.Month)
-                    .Distinct()
-            };
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            return View(_blogVm);
+            var posts = await _unitOfWork
+                .PostRepository
+                .GetAll()
+                .Take(3)
+                .ToListAsync();
+
+            var postCategoryViewModels = await _unitOfWork
+                .PostCategoryRepository
+                .GetAll()
+                .Include(x => x.Posts)
+                .Where(x => x.Posts.Count > 0)
+                .Select(x => new PostCategoryViewModel()
+                {
+                    Id = x.Id,
+                    Title = x.Title,
+                    PostsCount = x.Posts.Count()
+                }).ToListAsync();
+
+            var postTags = _unitOfWork.PostRepository
+                .GetAll()
+                .OrderByDescending(x => x.CreateDate)
+                .FirstOrDefault()?.Tags?.Split(',').ToList();
+
+            var blogSidebarViewModel = new BlogSidebarViewModel()
+            {
+                PostViewModels = _mapper.Map<IEnumerable<Post>, IEnumerable<PostViewModel>>(posts),
+                PostCategoryViewModels = postCategoryViewModels,
+                PostTags = postTags ?? new List<string>()
+            };
+
+            return View(blogSidebarViewModel);
         }
     }
 }
