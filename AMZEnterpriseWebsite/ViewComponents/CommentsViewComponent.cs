@@ -1,25 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AMZEnterpriseWebsite.Data;
-using AMZEnterpriseWebsite.Models.ViewModels;
+﻿using AMZEnterpriseWebsite.Models.ViewModels;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace AMZEnterpriseWebsite.ViewComponents
 {
     public class CommentsViewComponent : ViewComponent
     {
-        private readonly ApplicationDbContext _context;
-
-        public CommentsViewComponent(ApplicationDbContext context)
+        public async Task<IViewComponentResult> InvokeAsync(PostCommentTreeViewModel commentTree)
         {
-            _context = context;
-        }
-
-        public async Task<IViewComponentResult> InvokeAsync(ArticleCommentTreeViewModel commentTree)
-        {
-            var articleCommentTree = new ArticleCommentTreeViewModel { CommentSeed = commentTree.CommentSeed, Comments = commentTree.Comments };
+            var articleCommentTree = new PostCommentTreeViewModel { CommentSeed = commentTree.CommentSeed, PostCommentViewModels = commentTree.PostCommentViewModels };
 
             return await Task.FromResult(View(articleCommentTree));
         }
