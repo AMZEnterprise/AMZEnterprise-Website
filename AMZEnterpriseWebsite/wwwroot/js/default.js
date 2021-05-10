@@ -1,4 +1,4 @@
-$(function() {
+﻿$(function() {
 
 
     /*======================================================
@@ -44,32 +44,78 @@ $(function() {
 
 });
 
-var website = (function () {
+var Website = (function () {
 
-    var shaveText = function shave(selector) {
-        $(selector).shave("50");
+
+    //===================================
+    //          Text Reduce
+    //===================================
+    var textReduce = function shave(textSelector, numberOfChars) {
+        return $(textSelector).shave(`${numberOfChars}`);
     }
 
-    var slideShow = function slider(selector) {
-        $(selector).owlCarousel({
-            loop: true,
-            autoplay: true,
-            autoplayTimeout: 3000,
-            autoplayHoverPause: true,
-            margin: 0,
-            rtl: true,
-            nav: false,
-            dots: true,
-            items: 1
-        });
+
+    //===================================
+    //          Water effect
+    //===================================
+    var waterEffect = function water(elementSelector) {
+        $(elementSelector).ripples();
     }
+
+
+    //===================================
+    //          Json Result Handler
+    //===================================
+    var jsonResultHandler = function jsonHandler(jsonResult) {
+
+        if (jsonResult !== undefined && jsonResult !== null) {
+
+            //Not found
+            if (jsonResult.statusCode === 404) {
+                window.location = "/Error/404";
+            }
+            //Success
+            else if (jsonResult.statusCode === 200) {
+                $.alert({
+                    title: '',
+                    content: `<p>${jsonResult.message}</p>`,
+                    type: 'green',
+                    typeAnimated: true,
+                    buttons: {
+                        Ok: {
+                            text: "بستن"
+                        }
+                    }
+                });
+            }
+            //Error range 400 to 600
+            else if ((jsonResult.statusCode >= 400 && jsonResult.statusCode < 600) && jsonResult.url === null) {
+                $.alert({
+                    title: '',
+                    content: `<p>${jsonResult.message}</p>`,
+                    type: 'red',
+                    typeAnimated: true,
+                    buttons: {
+                        Ok: {
+                            text: "بستن"
+                        }
+                    }
+                });
+            }
+            //Redirect
+            else if (jsonResult.statusCode === 301 || jsonResult.statusCode === 302)
+                window.location = jsonResult.url;
+        }
+    }
+
+
 
     return {
-        shaveText: shaveText,
-        slideShow: slideShow
+        TextReduce: textReduce,
+        WaterEffect: waterEffect,
+        JsonResultHandler: jsonResultHandler
     }
-
-
 })();
+
 
   

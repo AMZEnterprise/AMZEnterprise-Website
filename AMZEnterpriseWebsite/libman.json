@@ -33,6 +33,37 @@
     {
       "library": "OwlCarousel2@2.3.4",
       "destination": "wwwroot/lib/OwlCarousel2/"
+    },
+    {
+      "provider": "jsdelivr",
+      "library": "jalali-moment@3.3.10",
+      "destination": "wwwroot/lib/jalali-moment/"
+    },
+    {
+      "provider": "jsdelivr",
+      "library": "sortablejs@1.13.0",
+      "destination": "wwwroot/lib/sortablejs/"
+    },
+    {
+      "library": "jquery-confirm@3.3.4",
+      "destination": "wwwroot/lib/jquery-confirm/"
+    },
+    {
+      "library": "jquery-ajax-unobtrusive@3.2.6",
+      "destination": "wwwroot/lib/jquery-ajax-unobtrusive/"
+    },
+    {
+      "library": "lightbox2@2.11.3",
+      "destination": "wwwroot/lib/lightbox2/"
+    },
+    {
+      "provider": "jsdelivr",
+      "library": "jquery.ripples@0.6.3",
+      "destination": "wwwroot/lib/jquery.ripples/"
+    },
+    {
+      "library": "TypewriterJS@2.17.0",
+      "destination": "wwwroot/lib/TypewriterJS/"
     }
   ]
 }
