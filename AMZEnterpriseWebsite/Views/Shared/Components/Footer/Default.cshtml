@@ -1,7 +1,5 @@
 ﻿@using System.Reflection
-@model AMZEnterpriseWebsite.Models.ViewModels.FooterVM
-
-
+@model AMZEnterpriseWebsite.Models.ViewModels.FooterViewModel
 
 <footer id="footer-area" class="area-mt">
     <div class="container-fluid">
@@ -13,38 +11,102 @@
                         را دنبال کنید
                     </p>
                     <ul>
-                        @{
-                            string telegramLink = "http://t.me/" + @Model.Setting.SocialMedia2;
-                            string instagramLink = "http://instagram.com/" + @Model.Setting.SocialMedia3;
-                            string phone = "tel:" + @Model.Setting.Phone1;
-                            string linkedInLink = "http://linkedin.com/" + @Model.Setting.SocialMedia4;
+                        @if (!string.IsNullOrWhiteSpace(Model.Instagram))
+                        {
+                            <li>
+                                <a href="@Model.Instagram"><span class="fab fa-instagram"></span></a>
+                            </li>
                         }
-                        <li>
-                            <a href=@telegramLink><span class="fab fa-telegram-plane"></span></a>
-                        </li>
-                        <li>
-                            <a href=@instagramLink><span class="fab fa-instagram"></span></a>
-                        </li>
-                        <li>
-                            <a href=@phone><span class="fa fa-phone"></span></a>
-                        </li>
-                        <li>
-                            <a href=@linkedInLink><span class="fab fa-linkedin"></span></a>
-                        </li>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Telegram))
+                        {
+                            <li>
+                                <a href="@Model.Telegram"><span class="fab fa-telegram"></span></a>
+                            </li>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.GooglePlus))
+                        {
+                            <li>
+                                <a href="@Model.GooglePlus"><span class="fab fa-google-plus"></span></a>
+                            </li>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.FaceBook))
+                        {
+                            <li>
+                                <a href="@Model.FaceBook"><span class="fab fa-facebook"></span></a>
+                            </li>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.LinkedIn))
+                        {
+                            <li>
+                                <a href="@Model.LinkedIn"><span class="fab fa-linkedin"></span></a>
+                            </li>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Youtube))
+                        {
+                            <li>
+                                <a href="@Model.Youtube"><span class="fab fa-youtube"></span></a>
+                            </li>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Aparat))
+                        {
+                            <li>
+                                <a href="@Model.Aparat"><span class="fa fa-image"></span></a>
+                            </li>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.GitHub))
+                        {
+                            <li>
+                                <a href="@Model.GitHub"><span class="fab fa-github"></span></a>
+                            </li>
+                        }
                     </ul>
                 </div>
                 <div id="footer-links-contact">
                     <ul class="text-left">
-                        <li>
-                            <span>تلفن همراه</span>
-                            <span>:</span>
-                            <span>@Model.Setting.Phone2</span>
-                        </li>
-                        <li>
-                            <span>ایمیل</span>
-                            <span>:</span>
-                            <span>@Model.Setting.Email2</span>
-                        </li>
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Phone1))
+                        {
+                            <li>
+                                <span>تلفن همراه</span>
+                                <span>:</span>
+                                <span>@Model.Phone1</span>
+                            </li>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Phone2))
+                        {
+                            <li>
+                                <span>تلفن همراه</span>
+                                <span>:</span>
+                                <span>@Model.Phone2</span>
+                            </li>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Email1))
+                        {
+                            <li>
+                                <span>ایمیل</span>
+                                <span>:</span>
+                                <span>@Model.Email1</span>
+                            </li>
+                        }
+
+                        @if (!string.IsNullOrWhiteSpace(Model.Email2))
+                        {
+                            <li>
+                                <span>ایمیل</span>
+                                <span>:</span>
+                                <span>@Model.Email2</span>
+                            </li>
+                        }
+
                     </ul>
                 </div>
             </div>
@@ -52,8 +114,8 @@
                 <p class="footer-section-header">
                     <span class="footer-section-header-border">درباره</span>
                 </p>
-                <h1 class="h4" id="footer-logo">@Model.Setting.SiteName</h1>
-                <p class="text-effect">
+
+                <p class="text-effect text-justify">
                     محیطی ایمن و راحت جهت سفارش پروژه های مختلف
                     کدنویسی شما است. به راحتی میتوانید
                     پروژه های برنامه نویسی خود را ثبت کنید و همچنین از مطالب
@@ -68,22 +130,25 @@
                     پر بازدید
                 </p>
                 <div id="footer-tags">
-                    @foreach (var tag in Model.Tags)
+                    @if (Model.PostTags != null && Model.PostTags.Any())
                     {
-                        <a asp-controller="Search" asp-action="SearchByTag" asp-route-id="@tag.Id">@tag.Name</a>
+                        @foreach (var postTag in Model.PostTags)
+                        {
+                            <a asp-controller="Blog" asp-action="Index" asp-route-postTag="@postTag">@postTag</a>
+                        }
                     }
                 </div>
-
             </div>
         </div>
         <div class="row" id="footer-second-row">
             <div class="col-12">
                 ساخته شده با
                 <span class="fa fa-heart"></span>
+                در <a href="http://www.xant.ir" class="text-danger">ژانت</a>
                 <br />
-                <span>@Model.Setting.SiteName @DateTime.Now.Year</span>
+                <span>@DateTime.Now.Year</span>
                 <span>|</span>
-                <span>نسخه @Assembly.GetEntryAssembly().GetName().Version</span>
+                <span>نسخه @Assembly.GetEntryAssembly()?.GetName().Version</span>
             </div>
         </div>
     </div>

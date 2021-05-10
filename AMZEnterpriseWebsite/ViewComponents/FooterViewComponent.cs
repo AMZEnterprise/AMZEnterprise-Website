@@ -1,39 +1,54 @@
-﻿using System.Linq;
-using System.Threading.Tasks;
-using AMZEnterpriseWebsite.Data;
-using AMZEnterpriseWebsite.Models;
+﻿using System.Collections.Generic;
+using AMZEnterpriseWebsite.Core.Domain;
 using AMZEnterpriseWebsite.Models.ViewModels;
+using AMZEnterpriseWebsite.Persistence;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AMZEnterpriseWebsite.ViewComponents
 {
     public class FooterViewComponent : ViewComponent
     {
-        private readonly ApplicationDbContext _context;
-        private FooterVM _footerVm { get; set; }
-        public FooterViewComponent(ApplicationDbContext context)
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+
+        public FooterViewComponent(IUnitOfWork unitOfWork, IMapper mapper)
         {
-            _context = context;
-
-            var tags = _context.PostAndTags
-                .Where(p=>p.Post.Status == PostStatus.Sent)
-                .GroupBy(q => q.TagId)
-                .OrderByDescending(gp => gp.Count())
-                .Take(20)
-                .Select(g => g.Key).ToList();
-
-            _footerVm = new FooterVM()
-            {
-                Setting = _context.Settings.FirstOrDefault(s => s.Id == 1),
-                Tags = _context.PostAndTags.Where(p=>tags.Contains(p.TagId)).Select(p=>p.Tag).Distinct()
-            };
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
         }
-
 
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            return View(_footerVm);
+            var settings = await _unitOfWork.SettingRepository.Get();
+
+            var footerViewModel = _mapper.Map<Setting, FooterViewModel>(settings);
+
+            var post = await _unitOfWork.PostRepository
+                .GetAll()
+                .OrderByDescending(x => x.CreateDate)
+                .FirstOrDefaultAsync();
+
+            if (post != null)
+            {
+                if (!string.IsNullOrWhiteSpace(post.Tags))
+                {
+                    var postTags = new List<string>();
+
+                    foreach (var tag in post.Tags.Split(','))
+                    {
+                        postTags.Add(tag);
+                    }
+
+                    footerViewModel.PostTags = postTags;
+                }
+            }
+
+            return View(footerViewModel);
         }
     }
 }
