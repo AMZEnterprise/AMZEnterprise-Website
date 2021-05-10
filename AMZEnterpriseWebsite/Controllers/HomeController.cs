@@ -1,60 +1,37 @@
-﻿using AMZEnterpriseWebsite.Data;
-using AMZEnterpriseWebsite.Models;
-using AMZEnterpriseWebsite.Models.ViewModels;
+﻿using AMZEnterpriseWebsite.Core.Domain;
+using AMZEnterpriseWebsite.Persistence;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SmartBreadcrumbs.Attributes;
-using System;
 using System.Linq;
 using System.Threading.Tasks;
+using AMZEnterpriseWebsite.Models;
+using AMZEnterpriseWebsite.Models.Constants;
+using AMZEnterpriseWebsite.Models.ViewModels;
+using AutoMapper;
 
 namespace AMZEnterpriseWebsite.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private IHttpContextAccessor _accessor;
-        private AboutVM _aboutVm { get; set; }
-        private HomeVM _homeVm { get; set; }
-        public HomeController(ApplicationDbContext context,IHttpContextAccessor accessor)
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _httpContextAccessor;
+        public HomeController(
+            IUnitOfWork unitOfWork, 
+            IMapper mapper,
+            IHttpContextAccessor httpContextAccessor)
         {
-            _context = context;
-            _aboutVm = new AboutVM()
-            {
-                MyProgresses = _context.MyProgresses,
-                Setting = _context.Settings.FirstOrDefault(s => s.Id == 1)
-            };
-            _homeVm = new HomeVM()
-            {
-                Setting = _context.Settings.FirstOrDefault(s => s.Id == 1),
-
-                Projects = _context.Projects
-                    .Include(p => p.ProjectAndMedias)
-                    .ThenInclude(pm => pm.Media)
-                    .OrderBy(p => p.DateTime)
-                    .Take(6),
-
-                SurveyComments = _context.SurveyComments
-                    .OrderByDescending(s=>s.DateTime)
-                    .Where(s=>s.Status == SurveyCommentStatus.Accepted)
-                    .Take(5),
-
-                Posts = _context.Posts
-                    .Include(p => p.Comments)
-                    .Include(p=>p.User)
-                    .Include(p=>p.Media)
-                    .OrderByDescending(p=>p.DateTime)
-                    .Take(2)
-            };
-            _accessor = accessor;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
+            _httpContextAccessor = httpContextAccessor;
         }
 
-      
+
         [DefaultBreadcrumb("صفحه اصلی")]
         public IActionResult Index()
         {
-            return View(_homeVm);
+            return View();
         }
 
 
@@ -67,34 +44,46 @@ namespace AMZEnterpriseWebsite.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         [Breadcrumb("تماس با من")]
-        public async Task<IActionResult> Contact(SurveyComment surveyComment)
+        public async Task<IActionResult> Contact(ContactFormViewModel contactFormViewModel)
         {
             if (ModelState.IsValid)
             {
-                surveyComment.Ip = _accessor.HttpContext.Connection.RemoteIpAddress.ToString();
-                surveyComment.Status = SurveyCommentStatus.UnClear;
-                surveyComment.DateTime = DateTime.Now;
-                surveyComment.IsEdited = false;
+                var contact = _mapper.Map<ContactFormViewModel, Contact>(contactFormViewModel);
 
-                _context.Add(surveyComment);
-                await _context.SaveChangesAsync();
+                if (_httpContextAccessor.HttpContext?.Connection.RemoteIpAddress != null)
+                {
+                    contact.Ip = _httpContextAccessor.HttpContext.Connection.RemoteIpAddress.ToString();
+                }
 
-                return RedirectToAction(nameof(Contact));
+                _unitOfWork.ContactRepository.Insert(contact);
+                await _unitOfWork.Complete();
+
+                return new JsonResult(new JsonResultModel()
+                {
+                    StatusCode = JsonResultStatusCode.Success,
+                    Message = ConstantMessages.CommentSentAndWillShowAfterAcceptance
+                });
             }
 
-            return View(surveyComment);
+            return new JsonResult(new JsonResultModel()
+            {
+                StatusCode = JsonResultStatusCode.ModelStateIsNotValid,
+                Message = ConstantMessages.CommentFailedToSend
+            });
         }
 
         [Breadcrumb("درباره")]
         public IActionResult About()
         {
-            return View(_aboutVm);
+            return View();
         }
 
         [Breadcrumb("حمایت مالی")]
-        public IActionResult Donate()
+        public async Task<IActionResult> Donate()
         {
-            return View(_context.Settings.FirstOrDefault(s => s.Id == 1));
+            var settings = await _unitOfWork.SettingRepository.Get();
+
+            return View(_mapper.Map<Setting,DonateViewModel>(settings));
         }
     }
 }
