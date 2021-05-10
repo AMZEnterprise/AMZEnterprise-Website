@@ -1,23 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using AMZEnterpriseWebsite.Core.Domain;
 using AMZEnterpriseWebsite.Data;
-using AMZEnterpriseWebsite.Models;
-using AMZEnterpriseWebsite.Services;
+using AMZEnterpriseWebsite.Models.Constants;
+using AMZEnterpriseWebsite.Persistence;
+using AMZEnterpriseWebsite.Services.EmailSender;
+using AMZEnterpriseWebsite.Services.FileHandler;
+using AutoMapper;
 using ElmahCore;
 using ElmahCore.Mvc;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.EntityFrameworkCore.Design.Internal;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using SmartBreadcrumbs.Extensions;
+using System;
+using System.Collections.Generic;
 
 namespace AMZEnterpriseWebsite
 {
@@ -36,6 +36,11 @@ namespace AMZEnterpriseWebsite
         {
 
             services.AddSingleton<IHttpContextAccessor, HttpContextAccessor>();
+
+            services.AddScoped<IUnitOfWork, UnitOfWork>();
+
+            services.AddTransient<IEmailSender, EmailSender>();
+            services.AddTransient<IFileHandler, FileHandler>();
 
 
             //Breadcrumbs Navigation
@@ -69,6 +74,7 @@ namespace AMZEnterpriseWebsite
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
 
+            services.AddAutoMapper(typeof(Startup));
 
 
             services.AddDbContext<ApplicationDbContext>(options =>
@@ -85,16 +91,19 @@ namespace AMZEnterpriseWebsite
 
 
 
-            services.AddIdentity<ApplicationUser, IdentityRole>(
+            services.AddIdentity<User, IdentityRole>(
                     options =>
                     {
                         options.Lockout.AllowedForNewUsers = true;
                         options.Lockout.MaxFailedAccessAttempts = 3;
-                        
-
+                        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(10);
                         options.User.RequireUniqueEmail = true;
                         options.Password.RequireDigit = false;
+                        options.Password.RequireLowercase = false;
+                        options.Password.RequireUppercase = false;
+                        options.Password.RequireNonAlphanumeric = false;
                         options.Password.RequiredLength = 6;
+                        options.SignIn.RequireConfirmedPhoneNumber = true;
                     })
                 .AddEntityFrameworkStores<ApplicationDbContext>()
                 .AddDefaultTokenProviders();
@@ -106,7 +115,9 @@ namespace AMZEnterpriseWebsite
             services.AddTransient<IEmailSender, EmailSender>();
 
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_2);
+            services.AddMvc()
+                .AddNewtonsoftJson()
+                .AddRazorRuntimeCompilation();
 
             services.AddSession(options =>
             {
@@ -115,12 +126,11 @@ namespace AMZEnterpriseWebsite
             });
 
 
-            services.ConfigureApplicationCookie(options => options.LoginPath = "/Admin/Manage/Login");
+            services.ConfigureApplicationCookie(options => options.LoginPath = "/Panel/Users/Login");
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, UserManager<ApplicationUser> userManager,
-            RoleManager<IdentityRole> roleManager)
+        public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
             if (env.IsDevelopment())
             {
@@ -133,17 +143,6 @@ namespace AMZEnterpriseWebsite
                 app.UseHsts();
             }
 
-
-
-            //Ensure Database Create If It doesn't exists
-            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
-            {
-                var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                context.Database.EnsureCreated();
-            }
-
-
-
             app.UseElmah();
 
             app.UseStatusCodePagesWithReExecute("/StatusCode/{0}");
@@ -154,30 +153,62 @@ namespace AMZEnterpriseWebsite
 
             app.UseStaticFiles();
 
+            app.UseRouting();
+
             app.UseCookiePolicy();
 
             app.UseAuthentication();
+            app.UseAuthorization();
 
 
 
-            app.UseMvc(routes =>
+            app.UseEndpoints(endpoints =>
             {
-		routes.MapRoute(
-                    name: "areas",
-                    template: "{area:exists}/{controller=Home}/{action=Index}/{id?}"
+                endpoints.MapAreaControllerRoute(
+                    areaName: "Panel",
+                    name: "panel",
+                    pattern: "/panel/{controller=Home}/{action=Index}/{id?}"
                 );
-                routes.MapRoute(
+
+                endpoints.MapControllerRoute(
                     name: "default",
-                    template: "{controller=Home}/{action=Index}/{id?}");
+                    pattern: "{controller=Home}/{action=Index}/{id?}");
             });
 
-            //Ensure Database Create If It doesn't exists
-            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>().CreateScope())
+            //Database Creation
+            using (var serviceScope = app.ApplicationServices.GetService<IServiceScopeFactory>()?.CreateScope())
             {
-                var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-                context.Database.EnsureCreated();
+                if (serviceScope != null)
+                {
+                    var roleManager = serviceScope.ServiceProvider.GetService<RoleManager<IdentityRole>>();
+                    var userManager = serviceScope.ServiceProvider.GetService<UserManager<User>>();
+                    var context = serviceScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+                    context.Database.EnsureCreated();
 
-                ApplicationDbInitializer.SeedData(userManager, roleManager, context);
+                    var roles = new List<string>()
+                    {
+                        ConstantUserRoles.SuperAdmin,
+                        ConstantUserRoles.Admin,
+                        ConstantUserRoles.Writer
+                    };
+
+                    var user = new User()
+                    {
+                        FirstName = "FirstName",
+                        LastName = "LastName",
+                        UserName = "A@dmin13",
+                        Email = "example@gmail.com",
+                        EmailConfirmed = true,
+                        PhoneNumberConfirmed = true,
+                        IsActive = true,
+                        FilesPathGuid = Guid.NewGuid(),
+                        CreateDate = DateTime.Now,
+                        LastEditDate = DateTime.Now
+                    };
+
+                    ApplicationDbInitializer.SeedData(context, userManager, roleManager, roles,
+                        ConstantUserRoles.SuperAdmin, user, "p@ss123");
+                }
             }
         }
     }
