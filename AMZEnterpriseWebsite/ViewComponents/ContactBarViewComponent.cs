@@ -1,25 +1,21 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using AMZEnterpriseWebsite.Data;
-using AMZEnterpriseWebsite.Models;
+﻿using AMZEnterpriseWebsite.Persistence;
 using Microsoft.AspNetCore.Mvc;
+using System.Threading.Tasks;
 
 namespace AMZEnterpriseWebsite.ViewComponents
 {
     public class ContactBarViewComponent : ViewComponent
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IUnitOfWork _unitOfWork;
 
-        public ContactBarViewComponent(ApplicationDbContext context)
+        public ContactBarViewComponent(IUnitOfWork unitOfWork)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
         }
 
         public async Task<IViewComponentResult> InvokeAsync()
         {
-            var setting = _context.Settings.FirstOrDefault(s => s.Id == 1);
+            var setting = await _unitOfWork.SettingRepository.Get();
 
             return View(setting);
         }
