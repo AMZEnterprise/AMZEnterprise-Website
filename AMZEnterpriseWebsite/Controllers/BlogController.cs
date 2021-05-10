@@ -1,148 +1,164 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text.RegularExpressions;
-using System.Threading.Tasks;
-using AMZEnterpriseWebsite.Data;
+﻿using AMZEnterpriseWebsite.Core.Domain;
 using AMZEnterpriseWebsite.Infrastructure;
 using AMZEnterpriseWebsite.Models;
+using AMZEnterpriseWebsite.Models.Constants;
 using AMZEnterpriseWebsite.Models.ViewModels;
+using AMZEnterpriseWebsite.Persistence;
+using AutoMapper;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 using SmartBreadcrumbs.Attributes;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace AMZEnterpriseWebsite.Controllers
 {
     public class BlogController : Controller
     {
-        private readonly ApplicationDbContext _context;
-        private IHttpContextAccessor _accessor;
-        public BlogController(ApplicationDbContext context, IHttpContextAccessor accessor)
+        private readonly IUnitOfWork _unitOfWork;
+        private readonly IMapper _mapper;
+        private readonly IHttpContextAccessor _accessor;
+
+        public BlogController(
+            IUnitOfWork unitOfWork,
+            IMapper mapper,
+            IHttpContextAccessor accessor)
         {
-            _context = context;
+            _unitOfWork = unitOfWork;
+            _mapper = mapper;
             _accessor = accessor;
         }
 
-
-        [Breadcrumb("بلاگ")]
-        public async Task<IActionResult> Index(int? pageNumber)
+        [Breadcrumb("وبلاگ")]
+        public IActionResult Index(
+            int? page, string searchString, int? postCategoryId, string postTag, PostSortFilterType postSortFilterType = PostSortFilterType.SortByDateDesc)
         {
+            var postSearch = new PostSearch()
+            {
+                SearchString = searchString,
+                PostCategoryId = postCategoryId,
+                PostTag = postTag,
+                PostSortFilterType = postSortFilterType,
+            };
 
-            //Only Released Posts Are Visible
-            var posts = _context.Posts
-                .Include(p => p.Comments)
-                .Where(p => p.Status == PostStatus.Sent)
-                .OrderByDescending(p => p.DateTime)
-                .Include(p => p.User)
-                .Include(p => p.Media)
-                .AsQueryable();
+            int pageSize = 6;
 
+            var posts = GetPosts(postSearch, pageIndex: page - 1 ?? 0, pageSize: pageSize);
 
-            ViewData["CurrentPage"] = pageNumber ?? 1;
+            var blogViewModel = new PostsViewModel()
+            {
+                PostViewModels = _mapper.Map<IEnumerable<Post>, IEnumerable<PostViewModel>>(posts),
+                Pager = new Pager(posts.TotalCount, posts.TotalPages, page, pageSize),
+                SearchString = searchString,
+                PostCategoryId = postCategoryId,
+                PostTag = postTag,
+                PostSortFilterType = postSortFilterType
+            };
 
-            int pageSize = 8;
-            return View(await PaginatedList<Post>.CreateAsync(posts.AsNoTracking(), pageNumber ?? 1, pageSize));
+            return View(blogViewModel);
         }
 
-
-
-
-
-        [Breadcrumb("ViewData.BreadcrumbTitle")]
-        public async Task<IActionResult> Posts(int? id)
+        [Breadcrumb("ViewData.Title")]
+        public async Task<IActionResult> Post(int id)
         {
-            if (id == null)
-            {
-                return NotFound();
-            }
-
-
-            var post = await _context.Posts
-                .Include(p => p.PostAndTags)
-                .ThenInclude(p => p.Tag)
-                .Include(p => p.User)
-                .FirstOrDefaultAsync(p => p.Id == id);
-
+            var post = await _unitOfWork.PostRepository.GetById(id);
 
             if (post == null)
             {
                 return NotFound();
             }
 
+            var postViewModel = _mapper.Map<Post, PostViewModel>(post);
 
-            var fathers = await _context.Comments
-                .Where(c => c.PostId == id && c.Status == CommentStatus.Accepted)
-                .ToListAsync();
+            var postComments = await _unitOfWork.PostCommentRepository
+                .GetAllByPostId(post.Id);
 
-            var childComments = await _context.Comments
-                .Where(c => c.PostId == id || c.ParentId == id)
-                .Include(c => c.Children)
-                .SelectMany(c => c.Children.Where(ch => ch.Status == CommentStatus.Accepted))
-                .ToListAsync();
+            postViewModel.PostCommentViewModels =
+                _mapper.Map<IEnumerable<PostComment>, IEnumerable<PostCommentViewModel>>(postComments);
 
-            childComments.AddRange(fathers);
-
-            post.Comments = childComments.Distinct().ToList();
-
-
-
-
-            TempData["PostId"] = id;
-
-            SinglePostVM postVm = new SinglePostVM()
-            {
-                Post = post,
-                SingleComment = new SingleCommentVM()
-            };
-
-            return View(postVm);
+            return View(postViewModel);
         }
-
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> CreateComment(int? postId, SingleCommentVM singleComment, int? parentId)
+        public async Task<IActionResult> CommentPost(PostCommentFormViewModel postCommentFormViewModel)
         {
-            if (postId == null)
-            {
-                return NotFound();
-            }
-
-            var post = await _context.Posts
-                .Include(p => p.Comments)
-                .FirstOrDefaultAsync(p => p.Id == postId);
-
-
-            if (post == null)
-            {
-                return NotFound();
-            }
-
-
-
             if (ModelState.IsValid)
             {
-                Comment comment = new Comment()
-                {
-                    Username = singleComment.Username,
-                    Email = singleComment.Email,
-                    Body = singleComment.Body,
-                    DateTime = DateTime.Now,
-                    Status = CommentStatus.UnClear,
-                    PostId = (int)postId,
-                    Ip = _accessor.HttpContext.Connection.RemoteIpAddress.ToString()
-                };
+                var postComment = _mapper.Map<PostCommentFormViewModel, PostComment>(postCommentFormViewModel);
 
-                if (parentId != null)
+                if (_accessor.HttpContext?.Connection.RemoteIpAddress != null)
                 {
-                    comment.ParentId = parentId;
+                    postComment.Ip = _accessor.HttpContext.Connection.RemoteIpAddress.ToString();
                 }
-                _context.Add(comment);
-                await _context.SaveChangesAsync();
+
+                postComment.PostCommentStatus = PostCommentStatus.Unclear;
+
+                _unitOfWork.PostCommentRepository.Insert(postComment);
+                await _unitOfWork.Complete();
+
+                return new JsonResult(new JsonResultModel()
+                {
+                    StatusCode = JsonResultStatusCode.Success,
+                    Message = ConstantMessages.CommentSentAndWillShowAfterAcceptance
+                });
             }
 
-            return RedirectToAction(nameof(Posts), new { id = postId });
+            return new JsonResult(new JsonResultModel()
+            {
+                StatusCode = JsonResultStatusCode.ModelStateIsNotValid,
+                Message = ConstantMessages.CommentFailedToSend
+            });
+        }
+
+        [NonAction]
+        public PagedList<Post> GetPosts(PostSearch postSearchDto = null, int pageIndex = 0, int pageSize = int.MaxValue)
+        {
+            var query = _unitOfWork.PostRepository.GetAll();
+
+            if (postSearchDto != null)
+            {
+                if (postSearchDto.PostCategoryId != null)
+                {
+                    query = query.Where(x => x.PostCategoryId == postSearchDto.PostCategoryId);
+                }
+
+                if (!string.IsNullOrWhiteSpace(postSearchDto.PostTag))
+                {
+                    query = query.Where(x => x.Tags.Contains(postSearchDto.PostTag));
+                }
+
+                if (!string.IsNullOrWhiteSpace(postSearchDto.SearchString))
+                {
+                    string searchString = postSearchDto.SearchString?.ToLower();
+                    query = query.Where(
+                            x => (x.Title.Contains(searchString) ||
+                                  x.Tags.Contains(searchString) ||
+                                  x.PostCategory.Title.Contains(searchString) ||
+                                  x.Body.Contains(searchString))
+                        );
+                }
+
+                switch (postSearchDto.PostSortFilterType)
+                {
+                    case PostSortFilterType.SortByDateAsc:
+                        query = query.OrderBy(x => x.CreateDate);
+                        break;
+                    case PostSortFilterType.SortByDateDesc:
+                        query = query.OrderByDescending(x => x.CreateDate);
+                        break;
+                    default:
+                        query = query.OrderByDescending(x => x.CreateDate);
+                        break;
+                }
+            }
+            else
+            {
+                query = query.OrderByDescending(x => x.CreateDate);
+            }
+
+            return new PagedList<Post>(query, pageIndex, pageSize);
         }
     }
 }
