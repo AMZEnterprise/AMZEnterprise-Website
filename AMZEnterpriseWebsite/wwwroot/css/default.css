@@ -540,7 +540,7 @@ textarea {
     }
 
     .blog-card-body img {
-        max-width: 100% !important;
+        width: 100% !important;
     }
 
 .blog-card-share-links ul {
